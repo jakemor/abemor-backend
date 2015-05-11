@@ -4,6 +4,24 @@
 	HELPER FUNCTIONS - Add as you need
 */
 
+function _get_db() {
+		
+	$dsn = 'mysql:host=localhost;port=3306;dbname=inventory';
+		
+	$options = array(
+	    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+	    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+	    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+	); 
+
+	$username = 'root'; 
+	$password = 'loplop34'; 
+
+	$db = new PDO($dsn, $username, $password, $options);
+
+	return $db; 
+}
+
 function _escape_mysql($string) {
 
 	$string = str_replace("'", "''", $string);
@@ -12,47 +30,8 @@ function _escape_mysql($string) {
 	return $string; 
 }
 
-function _likesForPost($post) {
-	$like = new Like(); 
-	$search = $like->search("post_id", $post);
-	
-	if ($search == False) {
-		return 0;
-	} else {
-		return sizeof($search); 
-	}
-}
 
-function _userLikedPost($post, $facebook_id) {
-	$like = new Like(); 
-	$search = $like->match(["post_id" => $post, "owner_facebook_id" => $facebook_id]);
-	
-	if ($search == False) {
-		return False;
-	} else {
-		return True;
-	}
-}
-
-function _distance($lat1, $lon1, $lat2, $lon2, $unit) {
-
-  $theta = $lon1 - $lon2;
-  $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
-  $dist = acos($dist);
-  $dist = rad2deg($dist);
-  $miles = $dist * 60 * 1.1515;
-  $unit = strtoupper($unit);
- 
-  if ($unit == "K") {
-    return ($miles * 1.609344);
-  } else if ($unit == "N") {
-      return ($miles * 0.8684);
-    } else {
-        return $miles;
-      }
-}
-
-function _timeAgo($etime) {
+function _time_ago($etime) {
 
     if ($etime < 1) {
         return "0s";
@@ -75,107 +54,6 @@ function _timeAgo($etime) {
     }
 }
 
-function _chirpUser($owner_id, $other_phone_number, $message, $lat, $lon) {
-	
-	$owner_username = _getUserDisplayName($owner_id); 
-	$pulse = new Pulse(); 
-		$pulse->owner_id = $owner_id; 
-		$pulse->other_phone_number = $other_phone_number; 
-		$pulse->message = $message;
-		$pulse->lat = $lat;
-		$pulse->lon = $lon;
-	 
-
-	if (_userExists("phone_number", $other_phone_number)) {
-		$other_id = _getUser("phone_number", $other_phone_number)->id;
-		$pulse->other_id = $other_id; 
-		$other_username = _getUserDisplayName($other_id); 
-		_newNotification($owner_id, $other_id, 2, "You chirped @{$other_username}"); 
-		_newNotification($other_id, $owner_id, 1, "{$owner_username}");
-	} else {
-		//$texted = _textPhoneNumber($other_phone_number, "Your friend {$owner_username} chirped at you! Download the app to chirp back at them. getchirp.com"); 
-		$texted = _textPhoneNumber($other_phone_number, "Your friend chirped at you! Download the app to chirp back at them. getchirp.com"); 
-		
-		if ($texted) {
-			_newNotification($owner_id, $other_phone_number, 2, "You chirped @{$other_phone_number}"); 
-		} else {
-			_newNotification($owner_id, $other_phone_number, 2, "{$other_phone_number} is not a valid phone number");
-		}
-	}
-
-	$pulse->save();
-
-	_respond("pulseUser", $pulse);
-}
-
-function _newNotification($owner_id, $other_phone_number, $type, $message) {
-	$notification = new Notification(); 
-		$notification->owner_id = $owner_id; 
-		$notification->other_phone_number = $other_phone_number; 
-		$notification->message = $message; 
-		$notification->type = $type; 
-	$notification->save(); 
-}
-
-function _userExists($id, $value) {
-	$user = new User(); 
-	return $user->get($id, $value); 
-}
-
-function _contactExists($phone) {
-	$contact = new Contact(); 
-	return $contact->get("phone_number", $phone); 
-}
-
-function _getUser($id, $value) {
-	if (_userExists($id, $value)) {
-		$user = new User(); 
-		$user->get($id, $value); 
-		return $user; 
-	} else {
-		return NULL;
-	}
-}
-
-function _getUserDisplayName($user_id) {
-	$user = _getUser("id", $user_id); 
-
-	if (is_null($user)) {
-		return "";
-	}
-
-	return $user->first_name . " " . $user->last_name;
-}
-
-function _textPhoneNumber($phone_number, $message) {
-    require "Twilio/Services/Twilio.php";
-    $AccountSid = "ACbd652dd257ef5f7fdbf246a6e7af8d3a";
-    $AuthToken = "e22f767658650152da61ff7dc93ad57e";
-    $client = new Services_Twilio($AccountSid, $AuthToken);
-	try {
-	    $sms = $client->account->messages->sendMessage(
-	        "516-210-4617", 
-	        $phone_number,
-	        $message
-	    );
-	    return TRUE; 
-	} catch (Exception $e) {
-   		return FALSE; 
-	}
-}
-
-function _getUserId($id, $value) {
-	$user = _getUser($id, $value);
-	if (is_null($user)) {
-		return NULL; 
-	}
-	return $user->id; 
-}
-
-function _getUserByPhoneNumber($phone_number) {
-	// extra line so i can fold
-	return _getUser("phone_number", $phone_number); 
-}
 
 function _validate($endpoints) {
 	for ($i=0; $i < sizeof($endpoints); $i++) { 
