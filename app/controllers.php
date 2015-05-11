@@ -19,7 +19,7 @@ function diamonds() {
 	$db = _get_db(); 
 	$query = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
 
-	isset($_GET["shape"]) ? echo "has get" : echo "no get"; 
+	$query .= isset($_GET["shape"]) ? " AND `Shape` = {$_GET['shape']}" : ""; 
 
 	// $query = $db->query();
 	// $result = $query->fetchAll(PDO::FETCH_ASSOC);
