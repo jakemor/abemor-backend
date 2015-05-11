@@ -17,9 +17,13 @@ function test() {
 
 function diamonds() {
 	$db = _get_db(); 
-	$result = $db->query("SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1");
-	$rows = $result->fetchAll(PDO::FETCH_ASSOC);
-	print_r($rows); 
+	$query = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
+
+	isset($_GET["shape"]) ? echo "has get" : echo "no get"; 
+
+	// $query = $db->query();
+	// $result = $query->fetchAll(PDO::FETCH_ASSOC);
+	// print_r($result); 
 }
 
 function example() {
