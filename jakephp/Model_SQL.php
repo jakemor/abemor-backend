@@ -10,7 +10,7 @@ class Model {
 		//$db = new SQLite30('database.db');
 		require 'local.php';
 
-		$dsn = 'mysql:host=localhost;port=3306;dbname=speak';
+		$dsn = 'mysql:host=localhost;port=3306;dbname=inventory';
 
 		$options = array(
 		    1002 => 'SET NAMES utf8',
@@ -32,7 +32,7 @@ class Model {
 		
 		require 'local.php';
 		
-		$dsn = 'mysql:host=localhost;port=3306;dbname=speak';
+		$dsn = 'mysql:host=localhost;port=3306;dbname=inventory';
 		
 		$options = array(
 		    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
