@@ -7,7 +7,17 @@
 class Model {
 
 	public function __construct() {
-		$db = new SQLite3('database.db');
+		//$db = new SQLite30('database.db');
+		require 'local.php';
+
+		$dsn = 'mysql:host=localhost;port=3306;dbname=inventory';
+
+		$options = array(
+		    1002 => 'SET NAMES utf8',
+		); 
+
+		$db = new PDO($dsn, $username, $password, $options);
+
 		$table_name = get_class($this);
 		$cols_array = array_keys(get_class_vars(get_class($this)));
 		$cols = implode(",", $cols_array);
@@ -17,9 +27,28 @@ class Model {
 		);
 	}
 
+	public function connectToDB() {
+		//$db = new SQLite3('database.db');
+		
+		require 'local.php';
+		
+		$dsn = 'mysql:host=localhost;port=3306;dbname=inventory';
+		
+		$options = array(
+		    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+		    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+		); 
+
+		$db = new PDO($dsn, $username, $password, $options);
+
+		return $db; 
+	}
+
 	// create()
 	public function save() {
-		$db = new SQLite3('database.db');
+		$db = $this->connectToDB();
+
 		$table_name = get_class($this);
 		
 		if (!property_exists($this, "id")) {
@@ -37,31 +66,27 @@ class Model {
 			array_push($cols_array, "created_at");
 			array_push($vals_array, time()); 
 
-			$cols = '"' . implode('", "', $cols_array) . '"';
+			$cols = 'id INTEGER PRIMARY KEY AUTO_INCREMENT, ' . implode(' VARCHAR(100) NOT NULL , ', $cols_array) . ' VARCHAR(100) NOT NULL';
 			$vals = "'" . implode("', '", $vals_array) . "'";
-			
+
 			$db->exec(
-				'CREATE TABLE IF NOT EXISTS ' . $table_name . '(' . $cols . ');'
+				'CREATE TABLE IF NOT EXISTS `' . $table_name . '` (' . $cols . ');'
 			);
 
+			$cols = implode(' , ', $cols_array);
+
 			$db->exec(
-				"INSERT INTO \"" . $table_name . "\" (" . $cols . ") VALUES (" . $vals . "); "
+				"INSERT INTO `" . $table_name . "` (" . $cols . ") VALUES (" . $vals . ")"
 	  		);
-
-			$query = "SELECT last_insert_rowid()";
-			
-			$result = $db->query($query); 
-			
-			$row = $result->fetchArray(SQLITE3_ASSOC);
-
-			$this->get("id", $row["last_insert_rowid()"]); 
+ 
 
 		} else {
+			// to do
 			$rows = 0; 
 			$updated = 0; 
 			foreach ($this as $key => $value) {
 				if ($db->exec(
-					'UPDATE ' . $table_name . ' SET ' . $key . '="' . $value . '" WHERE id="' . $this->id . '";'
+					'UPDATE `' . $table_name . '` SET `' . $key . '` = "' . $value . '" WHERE `id`=' . $this->id . ';'
 				)) {
 					$updated++; 
 				}
@@ -72,27 +97,41 @@ class Model {
 			$value = time(); 
 
 			$db->exec(
-					'UPDATE ' . $table_name . ' SET ' . $key . '="' . $value . '" WHERE id="' . $this->id . '";'
+					'UPDATE `' . $table_name . '` SET `' . $key . '` = "' . $value . '" WHERE `id`=' . $this->id . ';'
 				);
 
 			return $rows==$updated; 
 		}
 	}
 
+	public function tableExists() {
+		$db = $this->connectToDB();
+		$table_name = get_class($this);
+		$result = $db->query("SHOW TABLES LIKE '{$table_name}'");
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+		return sizeof($rows) > 0;
+	}
+
 	// get(key, value)
-	public function get($key, $value) {
-		$db = new SQLite3('database.db');
+	public function get($key, $value) { ///
+
+		if (!$this->tableExists()) {
+			return FALSE; 
+		}
+
+		$db = $this->connectToDB();
 		$table_name = get_class($this);
 
-		$query = "SELECT * FROM \"" . $table_name . "\" WHERE \"" . $key . "\" = '" . $value . "'";
-		
+		$query = "SELECT * FROM `" . $table_name . "` WHERE `" . $key . "` = '" . $value . "'";
+
 		$result = $db->query($query);
 
 		$found = FALSE; 
 		
-		while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+		while ($row = $result->fetchAll(PDO::FETCH_ASSOC)) {
+
 			$found = TRUE; 
-		    foreach ($row as $key => $value) {
+		    foreach ($row[0] as $key => $value) {
 		    	$this->$key = $value; 
 		    }
 		}
@@ -102,69 +141,92 @@ class Model {
 
 	// returns an array
 	public function search($key, $value) {
-		$db = new SQLite3('database.db');
+
+		if (!$this->tableExists()) {
+			return FALSE; 
+		}
+
+		$db = $this->connectToDB();
 		$table_name = get_class($this);
 
-		$query = "SELECT * FROM \"" . $table_name . "\" WHERE \"" . $key . "\" = '" . $value . "'";
+		$query = "SELECT * FROM `" . $table_name . "` WHERE `" . $key . "` = '" . $value . "'";
 
 		$result = $db->query($query);
 		$return = array();
 
-		while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-		    $db_row = array(); 
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+		$return = [];
+
+		foreach ($rows as $row) {
+		    $db_row = [];
 		    foreach ($row as $key => $value) {
 		    	$db_row[$key] = $value; 
 		    }
 		    array_push($return, $db_row); 
-		}
+		}	    
 
 		return $return; 
 	}
 
 	// returns an array
 	public function getAll() {
-		$db = new SQLite3('database.db');
+
+		if (!$this->tableExists()) {
+			return FALSE; 
+		}
+
+		$db = $this->connectToDB();
 		$table_name = get_class($this);
 
-		$query = "SELECT * FROM \"" . $table_name . "\"";
+		$query = "SELECT * FROM `" . $table_name . "`";
 
 		$result = $db->query($query);
 		$return = array();
 
-		while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-		    $db_row = array(); 
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+
+	    foreach ($rows as $row) {
+	    	$db_row = []; 
 		    foreach ($row as $key => $value) {
 		    	$db_row[$key] = $value; 
 		    }
 		    array_push($return, $db_row); 
-		}
+	    }	    
 
 		return $return; 
 	}
 
 	// returns an array
 	public function match($array) {
-		$db = new SQLite3('database.db');
+
+		if (!$this->tableExists()) {
+			return []; 
+		}
+
+		$db = $this->connectToDB();
 		$table_name = get_class($this);
 
 		$query_array = array();  
 
 		foreach ($array as $key => $value) {
-			array_push($query_array,  "\"" . $key . "\" = '" . $value . "'"); 
+			array_push($query_array,  "`" . $key . "` = '" . $value . "'"); 
 		}
 
-		$query = "SELECT * FROM \"" . $table_name . "\" WHERE " . implode(" AND ", $query_array);
+		$query = "SELECT * FROM `" . $table_name . "` WHERE " . implode(" AND ", $query_array);
 
 		$result = $db->query($query);
 		$return = array();
 
-		while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+		  
+		foreach ($rows as $row) {
 		    $db_row = array(); 
 		    foreach ($row as $key => $value) {
 		    	$db_row[$key] = $value; 
 		    }
-		    array_push($return, $db_row); 
-		}
+		    array_push($return, $db_row);
+		}  
+		
 
 		return $return; 
 	}
@@ -172,21 +234,29 @@ class Model {
 
 	// returns an array
 	public function getMultiple($key, $values) {
-		$db = new SQLite3('database.db');
+
+		if (!$this->tableExists()) {
+			return FALSE; 
+		}
+
+		$db = $this->connectToDB();
 		$table_name = get_class($this);
 
 		$query_array = array();  
 
 		foreach ($values as $value) {
-			array_push($query_array,  "\"" . $key . "\" = '" . $value . "'"); 
+			array_push($query_array,  "`" . $key . "` = '" . $value . "'"); 
 		}
 
-		$query = "SELECT * FROM \"" . $table_name . "\" WHERE " . implode(" OR ", $query_array);
+		$query = "SELECT * FROM `" . $table_name . "` WHERE " . implode(" OR ", $query_array);
 
 		$result = $db->query($query);
+		
 		$return = array();
 
-		while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+		   
+		foreach ($rows as $row) {
 		    $db_row = array(); 
 		    foreach ($row as $key => $value) {
 		    	$db_row[$key] = $value; 
@@ -199,10 +269,15 @@ class Model {
 
 	// delete()
 	public function delete() {
+
+		if (!$this->tableExists()) {
+			return FALSE; 
+		}
+
 		if (property_exists($this, "id")) {
-			$db = new SQLite3('database.db');
+			$db = $this->connectToDB();
 			$table_name = get_class($this);
-			$query = 'DELETE FROM "' . $table_name . '" WHERE ("id" = ' . $this->id . ');'; 
+			$query = "DELETE FROM `" . $table_name . "` WHERE `id` = '" . $this->id . "'"; 
 			return $db->exec($query); 
 		} else {
 			return FALSE; 
