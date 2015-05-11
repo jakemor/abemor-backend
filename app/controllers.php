@@ -25,6 +25,7 @@ function diamonds() {
 	$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	print_r(count($result)); 
+	echo "\n===========\n";
 	print_r($result); 
 }
 
