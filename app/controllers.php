@@ -21,11 +21,11 @@ function diamonds() {
 
 	$query .= isset($_GET["shape"]) ? " AND `Shape` = {$_GET['shape']}" : ""; 
 
+	$query = $db->query();
+	$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
-	echo $query; 
-	// $query = $db->query();
-	// $result = $query->fetchAll(PDO::FETCH_ASSOC);
-	// print_r($result); 
+	print_r(count($result)); 
+	print_r($result); 
 }
 
 function example() {
