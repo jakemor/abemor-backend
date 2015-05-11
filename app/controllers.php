@@ -7,7 +7,7 @@ include "helpers.php";
 // API Endpoints
 
 
-function tesst() {
+function test() {
 	$user = new User(); 
 		$user->username = "test"; 
 		$user->save(); 
@@ -19,7 +19,7 @@ function diamonds() {
 	$db = _get_db(); 
 	$result = $db->query("SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1");
 	$rows = $result->fetchAll(PDO::FETCH_ASSOC);
-	print_r($rows); 
+	print_r("done"); 
 }
 
 function example() {
