@@ -17,11 +17,11 @@ function test() {
 
 function diamonds() {
 	$db = _get_db(); 
-	$query = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
+	$sql = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
 
-	$query .= isset($_GET["shape"]) ? " AND `Shape` = {$_GET['shape']}" : ""; 
+	$sql .= isset($_GET["shape"]) ? " AND `Shape` = {$_GET['shape']}" : ""; 
 
-	$query = $db->query();
+	$query = $db->query($sql);
 	$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	print_r(count($result)); 
