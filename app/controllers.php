@@ -19,7 +19,7 @@ function diamonds() {
 	$db = _get_db(); 
 	$result = $db->query("SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1");
 	$rows = $result->fetchAll(PDO::FETCH_ASSOC);
-	print_r("done"); 
+	print_r($rows); 
 }
 
 function example() {
