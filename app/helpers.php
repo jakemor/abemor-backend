@@ -15,7 +15,7 @@ function _get_db() {
 	); 
 
 	$username = 'root'; 
-	$password = 'loplop34'; 
+	$password = 'root'; 
 
 	$db = new PDO($dsn, $username, $password, $options);
 
@@ -28,6 +28,41 @@ function _escape_mysql($string) {
 	$string = str_replace("\\", "\\\\", $string);
 
 	return $string; 
+}
+
+function _isset($value) {
+	return isset($value) && $value != ""; 
+}
+
+function _format_results($old_results) {
+
+	$prep = []; 
+
+	foreach ($old_results as $result) {
+
+		$item = []; 
+
+		$item["shape"] = !empty($result["Shape"]) ? $result["Shape"] : "n/a";
+		$item["cut"] = !empty($result["cut grade"]) ? $result["cut grade"] : "n/a";
+		$item["clarity_val"] = !empty($result["clarity code"]) ? $result["clarity code"] : "n/a";
+		$item["polish"] = !empty($result["polish"]) ? $result["polish"] : "n/a";
+		$item["symmetry"] = !empty($result["symmetry code"]) ? $result["symmetry code"] : "n/a";
+		$item["fluorescence"] = !empty($result["fluorescence"]) ? $result["fluorescence"] : "n/a";
+		$item["carats"] = !empty($result["size for website rounded"]) ? floatval($result["size for website rounded"]) : "n/a";
+		$item["clarity"] = !empty($result["grade non cert clarity"]) ? $result["grade non cert clarity"] : "n/a";
+		$item["price"] = !empty($result["Total Parcel"]) ? floatval($result["Total Parcel"]) : "n/a";
+		$item["depth"] = !empty($result["depth"]) ? floatval($result["depth"]) : "n/a";
+		$item["table"] = !empty($result["table"]) ? floatval($result["table"]) : "n/a";
+
+		array_push($prep, $item); 
+	}
+
+	$results = []; 
+	$results["count"] = count($prep);
+	$results["data"] = $prep; 
+
+
+	return $results; 
 }
 
 

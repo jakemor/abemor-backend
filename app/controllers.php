@@ -44,11 +44,9 @@ function diamonds() {
 	$query = $db->query($sql);
 	$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
-	print_r(count($result)); 
-	echo "\n===========\n";
 
-	print_r(json_encode($result)); 
-
+	// print_r(json_encode($result)); 
+	print_r(json_encode(_format_results($result))); 
 }
 
 function example() {
