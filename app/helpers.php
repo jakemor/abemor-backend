@@ -15,7 +15,7 @@ function _get_db() {
 	); 
 
 	$username = 'root'; 
-	$password = 'root'; 
+	$password = 'loplop34'; 
 
 	$db = new PDO($dsn, $username, $password, $options);
 
