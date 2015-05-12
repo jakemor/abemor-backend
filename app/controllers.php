@@ -33,9 +33,7 @@ function diamonds() {
 	print_r(count($result)); 
 	echo "\n===========\n";
 
-	foreach ($result as $value) {
-		echo $value["clarity code"] . "\n";
-	}
+	print_r(json_encode($result)); 
 
 }
 
