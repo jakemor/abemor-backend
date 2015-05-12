@@ -23,9 +23,17 @@ function diamonds() {
 	if (isset($_GET["shape"])) {
 		$array = explode(",", $_GET["shape"]);
 
+		$sql .= " AND (";
+
+		$parts = []; 
+
 		foreach ($array as $value) {
-			$sql .= " AND `Shape` = '{$value}'"; 
+			array_push($parts, "`Shape` = '{$value}'"); 
 		}
+
+		$sql .= implode(" OR ", $parts); 
+
+		$sql .= ")";
 	}
 
 	if (isset($_GET["clarity"])) {
