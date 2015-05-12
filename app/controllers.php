@@ -19,8 +19,14 @@ function diamonds() {
 	$db = _get_db(); 
 	$sql = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
 
-	$sql .= isset($_GET["shape"]) ? " AND `Shape` = '{$_GET['shape']}'" : ""; 
  
+	if (isset($_GET["shape"])) {
+		$array = explode(",", $_GET["shape"]);
+
+		foreach ($array as $value) {
+			$sql .= " AND `Shape` = '{$value}'"; 
+		}
+	}
 
 	if (isset($_GET["clarity"])) {
 		$array = explode(",", $_GET["clarity"]);
