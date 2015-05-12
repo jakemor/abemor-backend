@@ -24,7 +24,7 @@ function diamonds() {
 
 	if (isset($_GET["clarity"])) {
 		$array = explode(",", $_GET["clarity"]);
-		$sql .= " AND CAST(`clarity code` as INT) BETWEEN {$array[0]} AND {$array[1]}"
+		$sql .= " AND CAST(`clarity code` as INT) BETWEEN {$array[0]} AND {$array[1]}"; 
 	}
 
 	$query = $db->query($sql);
