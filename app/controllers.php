@@ -7,12 +7,32 @@ include "helpers.php";
 // API Endpoints
 
 
-function test() {
-	$user = new User(); 
-		$user->username = "test"; 
-		$user->save(); 
+function describe() {
+	if (_validate(["col"])) {
 
-		print_r($user); 
+		$db = _get_db();
+		$sql = "SELECT * FROM `item` WHERE `actual stones` = 1 AND CHAR_LENGTH(`color grade`) = 1";
+		$query = $db->query($sql);
+		$results = $query->fetchAll(PDO::FETCH_ASSOC);
+
+		$col = $_GET["col"];
+		$hash = []; 
+
+		foreach ($results as $result) {
+			if (!empty($result[$col])) {
+				if (!empty($hash[$result[$col]])) {
+					$hash[$result[$col]]++;
+				} else {
+					$hash[$result[$col]] = 1; 
+				} 
+			}
+		}
+
+		$results = []; 
+		$results["count"] = count($hash);
+		$results["data"] = $hash;
+		print_r(json_encode($results)); 
+	}
 }      
 
 function diamonds() {
@@ -41,12 +61,21 @@ function diamonds() {
 		$sql .= " AND `clarity code` BETWEEN {$array[0]} AND {$array[1]}"; 
 	}
 
+	if (isset($_GET["cert"])) {
+		$cert = $_GET["cert"];
+		$sql .= " AND `cert #` = '{$cert}'"; 
+	}
+
 	$query = $db->query($sql);
 	$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
 
-	// print_r(json_encode($result)); 
-	print_r(json_encode(_format_results($result))); 
+	if (isset($_GET["all"])) {
+		print_r(json_encode($result));
+	} else {
+		print_r(json_encode(_format_results($result))); 
+	}
+	
 }
 
 function example() {
