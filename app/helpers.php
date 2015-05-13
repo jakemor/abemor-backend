@@ -250,15 +250,15 @@ function _format_param($item) {
 		$measurements = explode("x", strtolower($item["measurements"]));
 
 		if (sizeof($measurements) == 3) {
-			$item["length"] = !empty(floatval($measurements[0])) ? floatval($measurements[0]) : "n/a";
-			$item["width"] = !empty(floatval($measurements[1])) ? floatval($measurements[1]) : "n/a";
-			$item["depth"] = !empty(floatval($measurements[2])) ? floatval($measurements[2]) : "n/a";
-			$item["measurements"] = implode(" x ", $measurements) . " mm";
+			// $item["length"] = !empty(floatval($measurements[0])) ? floatval($measurements[0]) : "n/a";
+			// $item["width"] = !empty(floatval($measurements[1])) ? floatval($measurements[1]) : "n/a";
+			// $item["depth"] = !empty(floatval($measurements[2])) ? floatval($measurements[2]) : "n/a";
+			// $item["measurements"] = implode(" x ", $measurements) . " mm";
 
-			$min = min($item["length"], $item["width"]);
-			$max = max($item["length"], $item["width"]);
+			// $min = min($item["length"], $item["width"]);
+			// $max = max($item["length"], $item["width"]);
 
-			$item["lw_ratio"] = ($min < $max && $min > 0 && $max > 0) ? round($max/$min,2) : "n/a"; 
+			// $item["lw_ratio"] = ($min < $max && $min > 0 && $max > 0) ? round($max/$min,2) : "n/a"; 
 
 		} else {
 			$item["length"] = "n/a";
