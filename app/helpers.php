@@ -15,7 +15,7 @@ function _get_db() {
 	); 
 
 	$username = 'root'; 
-	$password = 'loplop34'; 
+	$password = 'root'; 
 
 	$db = new PDO($dsn, $username, $password, $options);
 
@@ -36,6 +36,10 @@ function _isset($value) {
 
 function _format_item_description($item) {
 	$description = $item["carats"] . " carat " . $item["color"] . " " . $item["clarity"] . " " . $item["shape"];
+
+	if ($item["stone_count"] == 2) {
+		$description = "Hand matched pair of " . $description . "s";
+	}
 
 	$parts = []; 
 
@@ -115,7 +119,6 @@ function _format_param($item) {
 
 		$formatter["clarity"] = [
 			"300" => "I1",
-			"300" => "I1",
 			"350" => "SI3",
 			"400" => "SI2",
 			"500" => "SI1",
@@ -157,7 +160,7 @@ function _format_param($item) {
 			"ID" => "Ideal",
 			"FR" => "Fair",
 			"F" => "Fair",
-			"FG" => "Fair-Good",
+			"FG" => "Good",
 			"VS" => "n/a",
 			"MD" => "n/a",
 			"SM" => "n/a",
@@ -172,7 +175,7 @@ function _format_param($item) {
 			"ID" => "Ideal",
 			"FR" => "Fair",
 			"F" => "Fair",
-			"FG" => "Fair-Good",
+			"FG" => "Good",
 			"VS" => "n/a",
 			"MD" => "n/a",
 			"SM" => "n/a",
@@ -185,6 +188,7 @@ function _format_param($item) {
 			"FT" => "Faint",
 			"NON" => "No",
 			"Slight B" => "Slight",
+			"SB" => "Slight",
 			"Moderate B" => "Moderate",
 			"ModerateB" => "Moderate",
 			"Faint B" => "Faint",
@@ -208,12 +212,24 @@ function _format_param($item) {
 			"Sighlt B" => "Slight"
 		];
 
-
-
-		$formatter["certificate link"] = [
+		$formatter["certificate_link"] = [
 			"G" => "http://www.gia.edu/cs/Satellite?pagename=GST%2FDispatcher&childpagename=GIA%2FPage%2FSearchResults&c=Page&cid=1355954564260&q=",
 			"E" => "http://www.eglusa.com/verify-a-report-results/?st_num=",
 			"A" => "http://www.google.com"
+		];
+
+		$formatter["culet"] = [
+			"SL" => "Slight",
+			"NO" => "None",
+			"VS" => "Very Small",
+			"SM" => "Small",
+			"VG" => "Very Large",
+			"MD" => "Medium",
+			"ME" => "Medium",
+			"N0" => "None",
+			"LG" => "Large",
+			"VL" => "Very Large",
+			"NI" => "None"
 		];
 
 	foreach ($item as $key => $value) {
@@ -225,8 +241,38 @@ function _format_param($item) {
 	}
 
 	if (!empty($item["certificate"]) && !empty($item["report_no"])) {
-		$item["certificate link"] .= $item["report_no"];
+		if ($item["report_no"] != "n/a" && $item["certificate"] != "n/a") {
+			$item["certificate_link"] .= $item["report_no"];
+		}
 	}
+
+	if ($item["measurements"] != "n/a") {
+		$measurements = explode("x", strtolower($item["measurements"]));
+
+		if (sizeof($measurements) == 3) {
+			$item["length"] = !empty(floatval($measurements[0])) ? floatval($measurements[0]) : "n/a";
+			$item["width"] = !empty(floatval($measurements[1])) ? floatval($measurements[1]) : "n/a";
+			$item["depth"] = !empty(floatval($measurements[2])) ? floatval($measurements[2]) : "n/a";
+			$item["measurements"] = implode(" x ", $measurements) . " mm";
+
+			$min = min($item["length"], $item["width"]);
+			$max = max($item["length"], $item["width"]);
+
+			$item["lw_ratio"] = ($min < $max && $min > 0 && $max > 0) ? round($max/$min,2) : "n/a"; 
+
+		} else {
+			$item["length"] = "n/a";
+			$item["width"] = "n/a";
+			$item["depth"] = "n/a";
+			$item["lw_ratio"] = "n/a";
+		}
+	}
+
+	if (is_numeric($item["color"])) {
+		$item["color"] = $item["color_grade"];
+	}
+
+	unset($item["color_grade"]);
 
 	return $item; 
 }
@@ -235,17 +281,23 @@ function _sql_col($col) {
 	$defs = [];
 		$defs["shape"] = "Shape";
 		$defs["price"] = "Total Parcel";
-		$defs["carats"] = "size for website rounded";
+		$defs["carats"] = "actual cts";
 		$defs["cut"] = "cut grade";
 		$defs["color"] = "color code";
+		$defs["color_grade"] = "color grade";
 		$defs["clarity"] = "grade non cert clarity";
-		$defs["depth"] = "depth";
-		$defs["table"] = "table";
+		$defs["depth_p"] = "depth";
+		$defs["table_p"] = "table";
 		$defs["polish"] = "polish";
 		$defs["symmetry"] = "symmetry";
 		$defs["fluorescence"] = "fluorescence";
 		$defs["certificate"] = "cert from";
 		$defs["report_no"] = "cert #";
+		$defs["girdle"] = "girdle";
+		$defs["culet"] = "culet";
+		$defs["measurements"] = "measurements";
+		$defs["stone_count"] = "actual stones";
+		$defs["id"] = "lot number";
 
 	return $defs[$col]; 
 }
@@ -255,31 +307,42 @@ function _format_item($result) {
 
 	// basic info
 
+	$item["id"] = !empty($result[_sql_col("id")]) ? $result[_sql_col("id")] : "n/a";
 	$item["shape"] = !empty($result[_sql_col("shape")]) ? $result[_sql_col("shape")] : "n/a";
 	$item["price"] = !empty($result[_sql_col("price")]) ? floatval($result[_sql_col("price")]) : "n/a";
+	$item["stone_count"] = !empty($result[_sql_col("stone_count")]) ? floatval($result[_sql_col("stone_count")]) : "n/a";
 
 	// four cs
 
 	$item["carats"] = !empty($result[_sql_col("carats")]) ? floatval($result[_sql_col("carats")]) : "n/a";
 	$item["cut"] = !empty($result[_sql_col("cut")]) ? $result[_sql_col("cut")] : "n/a";
 	$item["color"] = !empty($result[_sql_col("color")]) ? $result[_sql_col("color")] : "n/a";
+	$item["color_grade"] = !empty($result[_sql_col("color_grade")]) ? $result[_sql_col("color_grade")] : "n/a";
 	$item["clarity"] = !empty($result[_sql_col("clarity")]) ? $result[_sql_col("clarity")] : "n/a";
 	
 	// detailed info
 
-	$item["depth"] = !empty($result[_sql_col("depth")]) ? floatval($result[_sql_col("depth")]) : "n/a";
-	$item["table"] = !empty($result[_sql_col("table")]) ? floatval($result[_sql_col("table")]) : "n/a";
+	$item["depth_p"] = !empty($result[_sql_col("depth_p")]) ? floatval($result[_sql_col("depth_p")]) : "n/a";
+	$item["table_p"] = !empty($result[_sql_col("table_p")]) ? floatval($result[_sql_col("table_p")]) : "n/a";
 	$item["polish"] = !empty($result[_sql_col("polish")]) ? $result[_sql_col("polish")] : "n/a";
 	$item["symmetry"] = !empty($result[_sql_col("symmetry")]) ? $result[_sql_col("symmetry")] : "n/a";
 	$item["fluorescence"] = !empty($result[_sql_col("fluorescence")]) ? $result[_sql_col("fluorescence")] : "n/a";
+	
+	$item["girdle"] = !empty($result[_sql_col("girdle")]) ? $result[_sql_col("girdle")] : "n/a";
+	$item["culet"] = !empty($result[_sql_col("culet")]) ? $result[_sql_col("culet")] : "n/a";
+	$item["measurements"] = !empty($result[_sql_col("measurements")]) ? $result[_sql_col("measurements")] : "n/a";
 
 	// certificate
 
 	$item["certificate"] = !empty($result[_sql_col("certificate")]) ? $result[_sql_col("certificate")] : "n/a";
-	$item["certificate link"] = !empty($result[_sql_col("certificate")]) ? $result[_sql_col("certificate")] : "n/a";
+	$item["certificate_link"] = !empty($result[_sql_col("certificate")]) ? $result[_sql_col("certificate")] : "n/a";
 	$item["report_no"] = !empty($result[_sql_col("report_no")]) ? $result[_sql_col("report_no")] : "n/a";
 
-	$item["description"] = _format_item_description(_format_param($item)); 
+	$item["carats"] = ($item["stone_count"] == 2) ? round($item["carats"]/2,2) : $item["carats"]; 
+
+	$item["description"] = _format_item_description(_format_param($item));
+
+	unset($item["stone_count"]);
 
 	return _format_param($item); 
 }
@@ -295,12 +358,63 @@ function _format_results($old_results) {
 		array_push($prep, $item); 
 	}
 
-	$results = []; 
-	$results["count"] = sizeof($prep);
-	$results["data"] = $prep; 
+	return $prep; 
+}
 
+function _sort_results($old_results) {
+	
+	foreach ($old_results as $key => $value) {
+		if ($value[$_GET["sort"]] == "n/a") {
+			unset($old_results[$key]);
+		}
+	}
 
-	return $results; 
+	if ($_GET["sort"] == "clarity") {
+		$all = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1", "I2", "I3"];
+		foreach ($old_results as $key => $value) {
+			if (array_search($value["clarity"], $all) === False) {
+				unset($old_results[$key]);
+			}
+		}
+	}
+
+	function _cmp($a, $b) {
+	    
+	    $col = $_GET["sort"];
+	    $order = isset($_GET["order"]) ? $_GET["order"] : -1;
+	    $order *= ($col == "color") ? -1 : 1;
+
+	    $a = $a[$col];
+	    $b = $b[$col];
+
+	    if ($col == "cut" || $col == "polish" || $col == "symmetry") {
+	    	$val = ["e" => 6, "i" => 5, "v" => 4, "g" => 3, "f" => 2];
+	    	$a = $val[strtolower(substr($a, 0,1))];
+	    	$b = $val[strtolower(substr($b, 0,1))];
+	    }
+
+	    if ($col == "clarity") {
+	    	$val = ["FL" => 10000, "IF" => 9000, "VVS1" => 8000, "VVS2" => 7000, "VS1" => 1600, "VS2" => 1500, "SI1" => 1400, "SI2" => 1300, "SI3" => 1200, "I1" => 1100, "I2" => 1000, "I3" => 900];
+	    	$a = $val[strtoupper($a)];
+	    	$b = $val[strtoupper($b)];
+	    }
+
+	    if ($a == $b) {
+	        return 0;
+	    }
+	    
+	    if ($order == 1) {
+	    	return ($a < $b) ? -1 : 1;
+	    }
+
+	    return ($a > $b) ? -1 : 1;
+	    	
+	}
+
+	usort($old_results, "_cmp");
+
+	return array_values($old_results);
+
 }
 
 
@@ -376,12 +490,9 @@ function _validateWithoutError($endpoints) {
 	return True; 
 }
 
-function _respond($endpoint, $input) {
+function _respond($input) {
 	$array = [];
-	$array["error"] = False;
-	$array["error_description"] = ""; 
-	$array["message"] = False;
-	$array["message_description"] = ""; 
+	$array["count"] = sizeof($input);
 	$array["data"] = $input; 
 	echo json_encode($array);
 	//_log($endpoint, "success"); 
