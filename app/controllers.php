@@ -264,8 +264,7 @@ function search() {
 		$result = _sort_results($result, $_GET["sort"]);
 	}
 
-	//_respond($result);
-	echo "done";
+	_respond(array_slice($result, 0,100));
 }
 
 function example() {
