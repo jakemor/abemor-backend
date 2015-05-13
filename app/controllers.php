@@ -200,7 +200,7 @@ function search() {
 		}
 
 
-		$all = ["FL", "IF", "VVS1", "VVS1", "VS1", "VS2", "SI1", "SI2", "SI3", "I1", "I2", "I3"];
+		$all = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "SI3", "I1", "I2", "I3"];
 
 		$min_key = array_search($params[0], $all); 
 		$max_key = array_search($params[1], $all);
@@ -264,7 +264,8 @@ function search() {
 		$result = _sort_results($result, $_GET["sort"]);
 	}
 
-	_respond($result);
+	//_respond($result);
+	echo "done";
 }
 
 function example() {
